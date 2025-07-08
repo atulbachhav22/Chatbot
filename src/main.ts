@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
+import { provideHttpClient } from '@angular/common/http';
 import { ChatbotComponent } from './components/chatbot/chatbot.component';
 
 @Component({
@@ -147,4 +148,8 @@ export class App {
   name = 'Angular Chatbot';
 }
 
-bootstrapApplication(App);
+bootstrapApplication(App, {
+  providers: [
+    provideHttpClient()
+  ]
+});

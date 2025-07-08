@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+import { ChatService, ChatMessage } from '../../services/chat.service';
 
 interface Message {
   id: number;
@@ -12,7 +14,8 @@ interface Message {
 @Component({
   selector: 'app-chatbot',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HttpClientModule],
+  providers: [ChatService],
   template: `
     <div class="chatbot-container">
       <!-- Floating Action Button -->
@@ -409,8 +412,17 @@ export class ChatbotComponent implements OnInit {
   currentMessage = '';
   isTyping = false;
   private messageId = 0;
+  private conversationHistory: ChatMessage[] = [];
+
+  constructor(private chatService: ChatService) {}
 
   ngOnInit() {
+    // Initialize conversation with system message
+    this.conversationHistory.push({
+      role: 'system',
+      content: 'You are a helpful AI assistant. Provide concise, friendly, and helpful responses.'
+    });
+
     // Add welcome message
     this.messages.push({
       id: this.messageId++,
@@ -439,36 +451,51 @@ export class ChatbotComponent implements OnInit {
     this.currentMessage = '';
     this.isTyping = true;
 
-    // Simulate bot response
-    setTimeout(() => {
-      this.messages.push({
-        id: this.messageId++,
-        text: this.generateBotResponse(userMessage),
-        sender: 'bot',
-        timestamp: new Date()
-      });
-      this.isTyping = false;
-      this.scrollToBottom();
-    }, 1000 + Math.random() * 1000);
+    // Add user message to conversation history
+    this.conversationHistory.push({
+      role: 'user',
+      content: userMessage
+    });
+
+    // Call OpenAI API
+    this.chatService.sendMessage(this.conversationHistory).subscribe({
+      next: (response) => {
+        const botResponse = response.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+        
+        // Add bot response to conversation history
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: botResponse
+        });
+
+        // Add bot message to UI
+        this.messages.push({
+          id: this.messageId++,
+          text: botResponse,
+          sender: 'bot',
+          timestamp: new Date()
+        });
+        
+        this.isTyping = false;
+        this.scrollToBottom();
+      },
+      error: (error) => {
+        console.error('Error calling chat API:', error);
+        
+        // Show error message to user
+        this.messages.push({
+          id: this.messageId++,
+          text: 'Sorry, I\'m having trouble connecting right now. Please try again later.',
+          sender: 'bot',
+          timestamp: new Date()
+        });
+        
+        this.isTyping = false;
+        this.scrollToBottom();
+      }
+    });
 
     this.scrollToBottom();
-  }
-
-  private generateBotResponse(userMessage: string): string {
-    const responses = [
-      "That's an interesting question! Let me think about that.",
-      "I understand what you're asking. Here's what I think...",
-      "Thanks for asking! I'd be happy to help with that.",
-      "Great question! Based on what you've told me...",
-      "I can help you with that. Let me explain...",
-      "That's a common question. Here's my perspective...",
-      "I appreciate you asking. From my understanding...",
-      "Good point! I think the answer depends on...",
-      "Thanks for reaching out! I'd suggest...",
-      "That's something I can definitely help with..."
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
   }
 
   private scrollToBottom() {
