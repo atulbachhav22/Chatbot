@@ -9,7 +9,7 @@ export interface ChatMessage {
   content: string;
 }
 
-export interface OpenAIResponse {
+export interface TachyonResponse {
   choices: {
     message: {
       content: string;
@@ -22,12 +22,12 @@ export interface OpenAIResponse {
   providedIn: 'root'
 })
 export class ChatService {
-  private apiUrl = 'https://api.openai.com/v1/chat/completions';
-  private apiKey = environment.openaiApiKey;
+  private apiUrl = 'https://api.tachyon.chat/v1/chat/completions';
+  private apiKey = environment.tachyonApiKey;
 
   constructor(private http: HttpClient) {}
 
-  sendMessage(messages: ChatMessage[]): Observable<OpenAIResponse> {
+  sendMessage(messages: ChatMessage[]): Observable<TachyonResponse> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${this.apiKey}`
@@ -40,7 +40,7 @@ export class ChatService {
       temperature: 0.7
     };
 
-    return this.http.post<OpenAIResponse>(this.apiUrl, body, { headers })
+    return this.http.post<TachyonResponse>(this.apiUrl, body, { headers })
       .pipe(
         catchError(this.handleError)
       );

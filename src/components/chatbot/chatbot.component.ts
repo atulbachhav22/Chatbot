@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
-import { ChatService, ChatMessage } from '../../services/chat.service';
+import { ChatService, ChatMessage, TachyonResponse } from '../../services/chat.service';
 
 interface Message {
   id: number;
@@ -457,7 +457,7 @@ export class ChatbotComponent implements OnInit {
       content: userMessage
     });
 
-    // Call OpenAI API
+    // Call Tachyon Chat API
     this.chatService.sendMessage(this.conversationHistory).subscribe({
       next: (response) => {
         const botResponse = response.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
