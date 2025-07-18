@@ -1,0 +1,111 @@
+import os
+from typing import Dict, Any, Optional
+
+import vertexai
+from vertexai.preview import rag
+from google.adk.agents import LlmAgent, Agent
+from google.adk.tools import Tool
+from google.generativeai import GenerativeModel, ChatSession
+
+# Initialize Vertex AI (if not already done)
+vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+
+# --- Retrieve Corpus Name (from your earlier setup or get it programmatically) ---
+# You'll need the full resource name of your RAG corpus.
+# If you don't have it handy, you can list them:
+# corpora = rag.list_corpora()
+# for corpus in corpora:
+#     if corpus.display_name == "my_product_documentation": # Or whatever your display name is
+#         CORPUS_NAME_FOR_TOOL = corpus.name
+#         break
+# else:
+#     raise ValueError("Corpus 'my_product_documentation' not found. Please create and populate it first.")
+
+# IMPORTANT: Replace with your actual corpus name (full resource path)
+CORPUS_NAME = "projects/YOUR_PROJECT_ID/locations/YOUR_LOCATION/ragCorpora/YOUR_CORPUS_ID"
+
+def retrieve_from_rag_engine(query: str, corpus_name: str) -> str:
+    """
+    Retrieves relevant information from a Vertex AI RAG Engine corpus
+    using rag.retrieval_query.
+    """
+    print(f"DEBUG: Retrieving for query: '{query}' from corpus: '{corpus_name}'")
+    rag_resources = [rag.RagResource(rag_corpus=corpus_name)]
+    rag_retrieval_config = rag.RagRetrievalConfig(top_k=3) # Retrieve top 3 relevant chunks
+    
+    try:
+        response = rag.retrieval_query(
+            rag_resources=rag_resources,
+            text=query,
+            rag_retrieval_config=rag_retrieval_config,
+        )
+        
+        retrieved_content = []
+        if response.retrieval_results:
+            for result in response.retrieval_results:
+                for chunk in result.chunks:
+                    retrieved_content.append(chunk.content)
+        
+        if retrieved_content:
+            return "\n".join(retrieved_content)
+        else:
+            return "No relevant information found in the documentation."
+    except Exception as e:
+        print(f"Error during RAG retrieval: {e}")
+        return f"An error occurred during retrieval: {e}"
+
+
+# Define an ADK Tool that calls our custom retrieval function
+class ProductDocumentationTool(Tool):
+    def __init__(self, corpus_name: str):
+        super().__init__(
+            name="product_documentation_search",
+            description="Searches for information within the product documentation knowledge base to answer questions about product features, policies, and troubleshooting.",
+            input_schema={"query": {"type": "string", "description": "The search query for the documentation."}},
+            output_schema={"retrieved_text": {"type": "string", "description": "The relevant text retrieved from the documentation."}}
+        )
+        self.corpus_name = corpus_name
+
+    def invoke(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        query = input_data["query"]
+        retrieved_text = retrieve_from_rag_engine(query, self.corpus_name)
+        return {"retrieved_text": retrieved_text}
+
+# Instantiate the custom RAG tool
+product_documentation_tool = ProductDocumentationTool(corpus_name=CORPUS_NAME)
+
+
+# Step 4: Define your ADK Agent with the Custom RAG Tool
+class ProductExpertAgent(LlmAgent):
+    def __init__(self, model_name: str = "gemini-1.5-flash-001"):
+        super().__init__(
+            model=model_name,
+            name="product_expert_agent",
+            instruction=f"""You are a helpful product expert who answers questions based on the provided product documentation.
+            When asked a question about product features, policies, or troubleshooting, use the `product_documentation_search` tool to find relevant information.
+            Always refer to the retrieved information to form your answer.
+            If the `product_documentation_search` tool indicates no relevant information was found, state that you cannot find the information in the documentation.
+            Be concise and accurate.""",
+            tools=[product_documentation_tool], # Attach the custom RAG tool
+        )
+
+# Step 5: Run your ADK Agent
+
+if __name__ == "__main__":
+    # Ensure CORPUS_NAME is correctly set
+    if "YOUR_PROJECT_ID" in CORPUS_NAME:
+        print("ERROR: Please update CORPUS_NAME with your actual Vertex AI RAG Corpus ID.")
+        print("Example: projects/your-project-id/locations/us-central1/ragCorpora/your-corpus-id")
+    else:
+        agent = ProductExpertAgent()
+        chat_session = ChatSession(agent)
+
+        print("Product Expert Agent ready. Ask me anything about the product (type 'exit' to quit).")
+
+        while True:
+            user_query = input("You: ")
+            if user_query.lower() == 'exit':
+                break
+
+            response = chat_session.send_message(user_query)
+            print(f"Agent: {response.text}")
