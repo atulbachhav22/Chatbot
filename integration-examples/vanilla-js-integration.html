@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vanilla JS + Chatbot Widget</title>
+    
+    <!-- Load React from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Load the Chatbot Widget -->
+    <script src="https://unpkg.com/@your-org/chatbot-widget/dist/chatbot-widget.umd.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@your-org/chatbot-widget/dist/style.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .content {
+            line-height: 1.6;
+            color: #666;
+        }
+        
+        .api-key-input {
+            margin: 20px 0;
+            padding: 10px;
+            width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .load-chatbot-btn {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        
+        .load-chatbot-btn:hover {
+            background: #2563EB;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .status.success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+        
+        .status.error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vanilla JavaScript + React Chatbot Widget</h1>
+        
+        <div class="content">
+            <p>This demonstrates how to integrate the React Chatbot Widget into a vanilla JavaScript application using CDN links.</p>
+            
+            <div>
+                <label for="apiKey">Enter your Tachyon API Key:</label>
+                <input 
+                    type="text" 
+                    id="apiKey" 
+                    class="api-key-input" 
+                    placeholder="your-tachyon-api-key-here"
+                    value="demo-api-key-for-testing"
+                >
+            </div>
+            
+            <button id="loadChatbot" class="load-chatbot-btn">Load Chatbot Widget</button>
+            
+            <div id="status"></div>
+            
+            <p>Once loaded, you'll see a floating chat icon in the bottom-right corner. Click it to start chatting!</p>
+            
+            <h3>Features Demonstrated:</h3>
+            <ul>
+                <li>Dynamic loading of React component in vanilla JS</li>
+                <li>CDN-based integration (no build process required)</li>
+                <li>Customizable theming and positioning</li>
+                <li>API key configuration</li>
+                <li>Error handling and status feedback</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Chatbot mounting point -->
+    <div id="chatbot-container"></div>
+
+    <script>
+        let chatbotLoaded = false;
+        let chatbotRoot = null;
+
+        document.getElementById('loadChatbot').addEventListener('click', function() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const statusDiv = document.getElementById('status');
+            
+            if (!apiKey) {
+                showStatus('Please enter an API key', 'error');
+                return;
+            }
+            
+            if (chatbotLoaded) {
+                showStatus('Chatbot is already loaded!', 'success');
+                return;
+            }
+            
+            try {
+                // Check if the ChatbotWidget is available
+                if (typeof ChatbotWidget === 'undefined') {
+                    throw new Error('ChatbotWidget not found. Make sure the script is loaded.');
+                }
+                
+                // Create React root and render the chatbot
+                const container = document.getElementById('chatbot-container');
+                chatbotRoot = ReactDOM.createRoot(container);
+                
+                // Render the React component
+                chatbotRoot.render(
+                    React.createElement(ChatbotWidget.default || ChatbotWidget, {
+                        apiKey: apiKey,
+                        theme: 'light',
+                        position: 'bottom-right',
+                        primaryColor: '#3B82F6',
+                        title: 'Vanilla JS Bot',
+                        subtitle: 'Powered by React',
+                        placeholder: 'Type your message...',
+                        welcomeMessage: 'Hello! I\'m integrated into a vanilla JS app. How can I help you?'
+                    })
+                );
+                
+                chatbotLoaded = true;
+                showStatus('Chatbot loaded successfully! Look for the chat icon in the bottom-right corner.', 'success');
+                
+                // Disable the button
+                document.getElementById('loadChatbot').disabled = true;
+                document.getElementById('loadChatbot').textContent = 'Chatbot Loaded';
+                
+            } catch (error) {
+                console.error('Error loading chatbot:', error);
+                showStatus('Error loading chatbot: ' + error.message, 'error');
+            }
+        });
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            
+            // Clear status after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.textContent = '';
+                    statusDiv.className = 'status';
+                }, 5000);
+            }
+        }
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (chatbotRoot) {
+                chatbotRoot.unmount();
+            }
+        });
+    </script>
+</body>
+</html>
