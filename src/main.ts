@@ -1,51 +1,42 @@
 import { Component } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
-import { ReactChatbotWrapperComponent } from './components/react-chatbot-wrapper/ReactChatbotWrapper.component';
+import { ChatbotComponent } from './components/chatbot/chatbot.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [ReactChatbotWrapperComponent],
+  imports: [ChatbotComponent],
   template: `
     <div class="app-container">
       <header class="app-header">
-        <h1>React Chatbot Micro Frontend Demo</h1>
-        <p>Experience our React chatbot component integrated into Angular</p>
+        <h1>Angular Chatbot Demo</h1>
+        <p>Experience our Angular chatbot component</p>
       </header>
       
       <main class="app-main">
         <div class="content-section">
-          <h2>Micro Frontend Integration</h2>
-          <p>This demonstrates a React chatbot component seamlessly integrated into an Angular application. The chatbot is built as a standalone React component that can be used in any framework.</p>
+          <h2>Angular Chatbot Integration</h2>
+          <p>This demonstrates a native Angular chatbot component with AI-powered conversations using the Tachyon Chat API.</p>
           
           <div class="features">
             <div class="feature-card">
-              <h3>⚛️ React Component</h3>
-              <p>Built with React and TypeScript for maximum compatibility and performance.</p>
+              <h3>🅰️ Angular Component</h3>
+              <p>Built with Angular and TypeScript for maximum performance and integration.</p>
             </div>
             <div class="feature-card">
-              <h3>🔧 Framework Agnostic</h3>
-              <p>Can be integrated into Angular, React, Vue, or any other web framework.</p>
+              <h3>🤖 AI-Powered</h3>
+              <p>Integrates with Tachyon Chat API for intelligent conversations.</p>
             </div>
             <div class="feature-card">
               <h3>🎨 Highly Customizable</h3>
-              <p>Supports themes, custom colors, positioning, and branding options.</p>
+              <p>Responsive design with smooth animations and modern UI.</p>
             </div>
           </div>
         </div>
       </main>
       
-      <app-react-chatbot
-        apiKey="YOUR_TACHYON_API_KEY_HERE"
-        theme="light"
-        position="bottom-right"
-        primaryColor="#3B82F6"
-        title="React AI Assistant"
-        subtitle="Powered by Tachyon"
-        placeholder="Ask me anything..."
-        welcomeMessage="Hello! I'm a React chatbot component integrated into this Angular app. How can I help you?">
-      </app-react-chatbot>
+      <app-chatbot></app-chatbot>
     </div>
   `,
   styles: [`
